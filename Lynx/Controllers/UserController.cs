@@ -51,13 +51,12 @@ public class UserController : ControllerBase
         {
             return BadRequest();
         }
-
         var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId, cancellationToken);
-
         if (user is null)
         {
             return NotFound();
         }
+
         return Ok(new
         {
             User = _mapper.Map(user)
@@ -80,7 +79,6 @@ public class UserController : ControllerBase
         };
 
         await _unitOfWork.Users.Add(user);
-
         await _unitOfWork.SaveAsync(cancellationToken);
 
         return CreatedAtAction(nameof(GetValue), new
@@ -95,15 +93,11 @@ public class UserController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginUserCommand command, CancellationToken cancellationToken)
     {
         var user = await _unitOfWork.Users.GetAsync(u => u.Email == command.email, cancellationToken);
-
-
         if (user is null)
         {
             return Unauthorized("Invalid Email");
         }
-
         bool verified = _passwordHasher.Verify(command.password!, user.Password!);
-
         if (!verified)
         {
             return Unauthorized("Invalid Password");
@@ -128,6 +122,7 @@ public class UserController : ControllerBase
         }
         await _unitOfWork.Users.Delete(user);
         await _unitOfWork.SaveAsync(cancellationToken);
+
         return NoContent();
     }
 
@@ -139,6 +134,7 @@ public class UserController : ControllerBase
         var user = await _unitOfWork.Users.GetAsync(u => u.Id == id, cancellationToken);
         user.Email = command.email;
         await _unitOfWork.SaveAsync(cancellationToken);
+
         return NoContent();
     }
 }

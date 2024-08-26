@@ -16,4 +16,3 @@ namespace Lynx.Infrastructure.Commands
         }
     }
 }
-
