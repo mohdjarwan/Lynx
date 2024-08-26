@@ -1,31 +1,55 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 
-namespace Lynx.Infrastructure.Data;
-
-internal sealed class PasswordHasher : IPasswordHasher
+public class EncryptionHelper
 {
-    private const int SaltSize = 16;
-    private const int HashSize = 32;
-    private const int Iterations = 500000;
+    private static readonly string key = "your-256-bit-key-here-32chars";
+    private static readonly string iv = "your-128-bit-iv-here";
 
-    private static readonly HashAlgorithmName Algorithm = HashAlgorithmName.SHA512;
-
-    public string Hash(string password)
+    public static string Encrypt(string plaintext)
     {
-        byte[] salt = RandomNumberGenerator.GetBytes(SaltSize);
-        byte[] hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, Algorithm, HashSize);
+        using (Aes aes = Aes.Create())
+        {
+            aes.Key = Encoding.UTF8.GetBytes(key);
+            aes.IV = Encoding.UTF8.GetBytes(iv);
 
-        return $"{Convert.ToHexString(hash)}-{Convert.ToHexString(salt)}";
+            ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                {
+                    using (StreamWriter sw = new StreamWriter(cs))
+                    {
+                        sw.Write(plaintext);
+                    }
+                }
+                return Convert.ToBase64String(ms.ToArray());
+            }
+        }
     }
 
-    public bool Verify(string password, string passwordHash)
+    public static string Decrypt(string ciphertext)
     {
-        string[] parts = passwordHash.Split('-');
-        byte[] hash = Convert.FromHexString(parts[0]);
-        byte[] salt = Convert.FromHexString(parts[1]);
+        using (Aes aes = Aes.Create())
+        {
+            aes.Key = Encoding.UTF8.GetBytes(key);
+            aes.IV = Encoding.UTF8.GetBytes(iv);
 
-        byte[] inputHash = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, Algorithm, HashSize);
+            ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
 
-        return CryptographicOperations.FixedTimeEquals(hash, inputHash);
+            using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(ciphertext)))
+            {
+                using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                {
+                    using (StreamReader sr = new StreamReader(cs))
+                    {
+                        return sr.ReadToEnd();
+                    }
+                }
+            }
+        }
     }
 }

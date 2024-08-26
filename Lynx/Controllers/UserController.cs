@@ -1,6 +1,5 @@
 ﻿using Lynx.Core.Entities;
 using Lynx.Infrastructure.Commands;
-using Lynx.Infrastructure.Data;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository;
 using Microsoft.AspNetCore.Mvc;
@@ -13,13 +12,11 @@ public class UserController : ControllerBase
 {
     private readonly UnitOfWork _unitOfWork;
     private readonly IUserMapper _mapper;
-    private readonly IPasswordHasher _passwordHasher;
-    public UserController(UnitOfWork unitOfWork,IUserMapper mapper, IPasswordHasher passwordHasher)
-    {
 
+    public UserController(UnitOfWork unitOfWork,IUserMapper mapper)
+    {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
-        _passwordHasher = passwordHasher;
     }
 
     [HttpGet]
@@ -72,7 +69,7 @@ public class UserController : ControllerBase
         {
             UserName = command.name,
             Email = command.email,
-            Password =_passwordHasher.Hash(command.password!),
+            Password = command.password,
             FirstName = command.firstname,
             LastName = command.lastname,
             TenantId = command.tenantid

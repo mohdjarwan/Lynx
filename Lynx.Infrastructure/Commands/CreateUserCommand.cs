@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using Lynx.Infrastructure.Data;
 namespace Lynx.Infrastructure.Commands
 {
     public class CreateUserCommand
