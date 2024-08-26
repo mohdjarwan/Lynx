@@ -1,5 +1,6 @@
 ﻿using Lynx.Core.Entities;
 using Lynx.Infrastructure.Commands;
+using Lynx.Infrastructure.Data;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository;
 using Lynx.Infrastructure.Repository.Interfaces;
@@ -19,9 +20,12 @@ public class UserController : ControllerBase
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _passwordHasher = passwordHasher;
     }
 
     [HttpGet]
+    [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<IEnumerable<User>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
@@ -37,8 +41,10 @@ public class UserController : ControllerBase
         });
     }
 
-    [HttpGet]
+    [HttpGet("{id:int}")]
     [ProducesResponseType<User>(StatusCodes.Status200OK)]
+    [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetValue(int userId, CancellationToken cancellationToken)
     {
         if (userId <= 0)
@@ -86,7 +92,7 @@ public class UserController : ControllerBase
     [HttpPost("Login")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<User>(StatusCodes.Status201Created)]
-    public async Task<IActionResult> Login([FromBody]LoginUserCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> Login([FromBody] LoginUserCommand command, CancellationToken cancellationToken)
     {
         var user = await _unitOfWork.Users.GetAsync(u => u.Email == command.email, cancellationToken);
 

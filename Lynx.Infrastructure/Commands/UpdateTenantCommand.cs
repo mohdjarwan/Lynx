@@ -1,14 +1,13 @@
 ﻿using FluentValidation;
-
 namespace Lynx.Infrastructure.Commands;
 
-public class CreateTenantCommand
+public class UpdateTenantCommand
 {
     public string? name { get; set; }
 }
-public class CreateTenantCommandValidator : AbstractValidator<CreateTenantCommand>
+public class UpdateTenantCommandValidator : AbstractValidator<UpdateTenantCommand>
 {
-    public CreateTenantCommandValidator()
+    public UpdateTenantCommandValidator()
     {
         RuleFor(c => c.name).NotNull();
 
