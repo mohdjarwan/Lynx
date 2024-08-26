@@ -23,8 +23,6 @@ public class UserController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
-    [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<IEnumerable<User>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(int userId, CancellationToken cancellationToken)
     {
@@ -44,10 +42,8 @@ public class UserController : ControllerBase
         });
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet]
     [ProducesResponseType<User>(StatusCodes.Status200OK)]
-    [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
-    [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetValue(int userId, CancellationToken cancellationToken)
     {
         if (userId <= 0)
