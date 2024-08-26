@@ -3,11 +3,11 @@ using Lynx.Infrastructure.Repository.Interfaces;
 
 namespace Lynx.Infrastructure.Repository;
 
-public class UnitOfWork(ApplicationDbContext db) : IUnitOfWork
+public class UnitOfWork(ApplicationDbContext db, ITenantRepository tenants, IUserRepository users) : IUnitOfWork
 {
     private readonly ApplicationDbContext _db = db;
-    public IUserRepository Users { get; set; } = new UserRepository(db);
-    public ITenantRepository Tenants { get; set; } = new TenantRepository(db);
+    public IUserRepository Users { get; set; } = users;
+    public ITenantRepository Tenants { get; set; } = tenants;
 
     public async Task<int> SaveAsync(CancellationToken cancellationToken)
     {

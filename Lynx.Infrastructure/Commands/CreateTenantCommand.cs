@@ -1,16 +1,12 @@
-﻿using FluentValidation;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Lynx.Infrastructure.Commands;
-
-public class CreateTenantCommand
+namespace Lynx.Infrastructure.Commands
 {
-    public string? name { get; set; }
-}
-public class CreateTenantCommandValidator : AbstractValidator<CreateTenantCommand>
-{
-    public CreateTenantCommandValidator()
+    internal class CreateTenantCommand
     {
-        RuleFor(c => c.name).NotNull();
-
     }
 }
