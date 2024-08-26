@@ -2,6 +2,7 @@
 using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository;
+using Lynx.Infrastructure.Repository.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lynx.Controllers;
@@ -10,10 +11,10 @@ namespace Lynx.Controllers;
 [ApiController]
 public class TenantController : ControllerBase
 {
-    private readonly UnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantMapper _mapper;
 
-    public TenantController(UnitOfWork unitOfWork, ITenantMapper mapper)
+    public TenantController(IUnitOfWork unitOfWork, ITenantMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -21,13 +22,10 @@ public class TenantController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType<IEnumerable<User>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Get(int tenantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        if (tenantId <= 0)
-        {
-            return BadRequest();
-        }
-        var Tenants = await _unitOfWork.Tenants.GetAllAsync(u => u.Id == tenantId, cancellationToken);
+        var Tenants = await _unitOfWork.Tenants.GetAllAsync(cancellationToken);
+
         if (Tenants is null)
         {
             return NotFound();

@@ -4,6 +4,7 @@ using Lynx.Infrastructure.Repository.Interfaces;
 using Lynx.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserMapper, UserMapper>();
 builder.Services.AddScoped<ITenantMapper, TenantMapper>();
+builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
 var app = builder.Build();
 

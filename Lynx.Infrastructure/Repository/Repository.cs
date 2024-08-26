@@ -16,12 +16,8 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet = _db.Set<T>();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken)
+    public async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken)
     {
-        if (predicate != null)
-        {
-            return await _dbSet.Where(predicate).ToListAsync(cancellationToken);
-        }
         return await _dbSet.ToListAsync(cancellationToken);
     }
 

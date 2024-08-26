@@ -3,6 +3,8 @@ using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Data;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository;
+using Lynx.Infrastructure.Repository.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lynx.Controllers;
@@ -11,12 +13,11 @@ namespace Lynx.Controllers;
 [ApiController]
 public class UserController : ControllerBase
 {
-    private readonly UnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IUserMapper _mapper;
     private readonly IPasswordHasher _passwordHasher;
-    public UserController(UnitOfWork unitOfWork,IUserMapper mapper, IPasswordHasher passwordHasher)
+    public UserController(IUnitOfWork unitOfWork, IUserMapper mapper, IPasswordHasher passwordHasher)
     {
-
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _passwordHasher = passwordHasher;
@@ -26,13 +27,9 @@ public class UserController : ControllerBase
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<IEnumerable<User>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Get(int userId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        if (userId <= 0)
-        {
-            return BadRequest();
-        }
-        var users = await _unitOfWork.Users.GetAllAsync(u => u.Id == userId, cancellationToken);
+        var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
         if (users is null)
         {
             return NotFound();
@@ -76,7 +73,7 @@ public class UserController : ControllerBase
         {
             UserName = command.name,
             Email = command.email,
-            Password =_passwordHasher.Hash(command.password!),
+            Password = _passwordHasher.Hash(command.password!),
             FirstName = command.firstname,
             LastName = command.lastname,
             TenantId = command.tenantid
@@ -92,6 +89,28 @@ public class UserController : ControllerBase
         }, user);
     }
 
+    [HttpPost("Login")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<User>(StatusCodes.Status201Created)]
+    public async Task<IActionResult> Login([FromBody]LoginUserCommand command, CancellationToken cancellationToken)
+    {
+        var user = await _unitOfWork.Users.GetAsync(u => u.Email == command.email, cancellationToken);
+
+
+        if (user is null)
+        {
+            return Unauthorized("Invalid Email");
+        }
+
+        bool verified = _passwordHasher.Verify(command.password!, user.Password!);
+
+        if (!verified)
+        {
+            return Unauthorized("Invalid Password");
+        }
+
+        return Ok("Login successfull");
+    }
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
