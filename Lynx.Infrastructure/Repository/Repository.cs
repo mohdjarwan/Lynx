@@ -1,4 +1,5 @@
 ﻿using Lynx.Infrastructure.Data;
+using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;

@@ -2,28 +2,37 @@
 using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Data;
 using Lynx.Infrastructure.Mappers;
-using Lynx.Infrastructure.Repository;
 using Lynx.Infrastructure.Repository.Interfaces;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace Lynx.Controllers;
 
-[Route("api/[controller]")]
+
 [ApiController]
+//[Authorize]
+[Route("api/[controller]")]
 public class UserController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserMapper _mapper;
     private readonly IPasswordHasher _passwordHasher;
-    public UserController(IUnitOfWork unitOfWork, IUserMapper mapper, IPasswordHasher passwordHasher)
+    private readonly IConfiguration _configuration;
+    public UserController(IUnitOfWork unitOfWork, IUserMapper mapper, IPasswordHasher passwordHasher,
+        IConfiguration configuration)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _passwordHasher = passwordHasher;
+        _configuration = configuration;
     }
 
     [HttpGet]
+    [Authorize]
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<IEnumerable<User>>(StatusCodes.Status200OK)]
@@ -97,13 +106,39 @@ public class UserController : ControllerBase
         {
             return Unauthorized("Invalid Email");
         }
+
         bool verified = _passwordHasher.Verify(command.password!, user.Password!);
         if (!verified)
         {
             return Unauthorized("Invalid Password");
         }
 
-        return Ok("Login successfull");
+        string token = CreateToken(user);
+        return Ok(new { Token = token });
+    }
+
+    private string CreateToken(User user)
+    {
+        var claims = new List<Claim>
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim("userid", user.Id.ToString())
+    };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddDays(int.Parse(_configuration["Jwt:ExpiryInDays"])),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
