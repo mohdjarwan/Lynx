@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Lynx.Core.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -28,15 +29,18 @@ builder.Services.AddAuthentication(opt =>
 }).AddJwtBearer(opt =>{
 
     opt.SaveToken = true;
-    opt.RequireHttpsMetadata=true;
+    //opt.RequireHttpsMetadata=true;
     opt.TokenValidationParameters = new TokenValidationParameters()
     {
         
-        ValidateIssuer = true,
-        ValidateAudience = true,
+        ValidateIssuer = false,
         ValidIssuer = config["JWT:Issuer"],
+        ValidateAudience = false,
         ValidAudience = config["JWT:audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JWT:secret"]!))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JWT:secret"]!)),
+        ValidateLifetime = false, // Disable lifetime validation
+        ClockSkew = TimeSpan.Zero
+
     };
 
 });

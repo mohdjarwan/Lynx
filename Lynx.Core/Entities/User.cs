@@ -1,8 +1,9 @@
-﻿using ServiceStack.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using ServiceStack.DataAnnotations;
 
 namespace Lynx.Core.Entities;
 
-public class User
+public class User 
 {
     public int Id { get; set; }
 

@@ -5,15 +5,15 @@ namespace Lynx.Infrastructure.Mappers;
 
 public interface IUserMapper
 {
-    UserDto Map(User user);
+    RegisterDto Map(User user);
 }
 public class UserMapper:IUserMapper
 {
-    public UserDto Map(User user)
+    public RegisterDto Map(User user)
     {
         return new()
         {
-            Id = user.Id,
+            //Id = user.Id,
             UserName = user.UserName,
             Email = user.Email,
             Password = user.Password

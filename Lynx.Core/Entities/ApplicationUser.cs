@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using ServiceStack.DataAnnotations;
 
-namespace Lynx.Infrastructure.Data;
+namespace Lynx.Core.Entities;
 
 public class ApplicationUser : IdentityUser
 {
-   
+
 }
