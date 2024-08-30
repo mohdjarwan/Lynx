@@ -1,12 +1,13 @@
 ﻿using Lynx.Core.Entities;
 using Lynx.Infrastructure;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lynx.Infrastructure.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public ApplicationDbContext(DbContextOptions  options) : base(options) { }
         public DbSet<User> Users { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)

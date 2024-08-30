@@ -1,9 +1,11 @@
 ﻿using Lynx.Core.Entities;
 using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Data;
+using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -99,47 +101,61 @@ public class UserController : ControllerBase
     [HttpPost("Login")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<User>(StatusCodes.Status201Created)]
-    public async Task<IActionResult> Login([FromBody] LoginUserCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> Login(LoginDto loginDto, CancellationToken cancellationToken)
     {
-        var user = await _unitOfWork.Users.GetAsync(u => u.Email == command.email, cancellationToken);
+        var user = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email, cancellationToken);
         if (user is null)
         {
             return Unauthorized("Invalid Email");
         }
 
-        bool verified = _passwordHasher.Verify(command.password!, user.Password!);
+        bool verified = _passwordHasher.Verify(loginDto.Password!, user.Password!);
         if (!verified)
         {
             return Unauthorized("Invalid Password");
         }
+        var claims = new List<Claim>();
+        claims.Add(new Claim(ClaimTypes.Name, user.UserName!));
+        claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
 
-        string token = CreateToken(user);
-        return Ok(new { Token = token });
-    }
-
-    private string CreateToken(User user)
-    {
-        var claims = new List<Claim>
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-        new Claim(JwtRegisteredClaimNames.Email, user.Email),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        new Claim("userid", user.Id.ToString())
-    };
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:secret"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
+        //Created token
+        var MyToken = new JwtSecurityToken(
+            issuer: _configuration["JWT:Issuer"],
+            audience: _configuration["JWT:audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(int.Parse(_configuration["Jwt:ExpiryInDays"])),
+            expires: DateTime.Now.AddHours(1),
+            signingCredentials: creds
+        );
+        return Ok(new
+        {
+            token = new JwtSecurityTokenHandler().WriteToken(MyToken),
+            expiration = MyToken.ValidTo
+        });
+    }
+        private string CreateToken(User user)
+    {
+        var claims = new List<Claim>();
+        claims.Add(new Claim(ClaimTypes.Name, user.UserName!));
+        claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:secret"]!));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+         
+        //Created token
+        var MyToken = new JwtSecurityToken(
+            issuer: _configuration["JWT:Issuer"],
+            audience: _configuration["JWT:audience"],
+            claims: claims,
+            expires: DateTime.Now.AddHours(1),
             signingCredentials: creds
         );
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return new JwtSecurityTokenHandler().WriteToken(MyToken);
     }
+
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -172,4 +188,5 @@ public class UserController : ControllerBase
 
         return NoContent();
     }
+
 }
