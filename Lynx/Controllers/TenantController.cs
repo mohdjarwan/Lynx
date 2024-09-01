@@ -1,7 +1,6 @@
 ﻿using Lynx.Core.Entities;
 using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Mappers;
-using Lynx.Infrastructure.Repository;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 

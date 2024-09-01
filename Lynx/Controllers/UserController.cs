@@ -5,21 +5,14 @@ using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Lynx.Controllers;
 
 [ApiController]
-//[Authorize]
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
-    //  private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAuthService _authService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserMapper _mapper;
@@ -35,7 +28,7 @@ public class UserController : ControllerBase
         _authService = auth;
     }
 
-    [Authorize]
+   // [Authorize]
     [HttpGet]
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
@@ -75,6 +68,24 @@ public class UserController : ControllerBase
             User = _mapper.Map(user)
         });
     }
+    [HttpGet("IsDeleted")]
+    [ProducesResponseType<User>(StatusCodes.Status200OK)]
+    [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetValueusingIsDeleted(bool IsDeleted, CancellationToken cancellationToken)
+    {
+     
+        var user = await _unitOfWork.Users.GetAsync(u => u.IsDeleted == IsDeleted, cancellationToken);
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new
+        {
+            User = _mapper.Map(user)
+        });
+    }
 
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -88,7 +99,8 @@ public class UserController : ControllerBase
             Password = _passwordHasher.Hash(command.password!),
             FirstName = command.firstname,
             LastName = command.lastname,
-            TenantId = command.tenantid
+            TenantId = command.tenantid,
+            IsDeleted = command.IsDeleted
         };
 
         await _unitOfWork.Users.Add(user);
@@ -99,23 +111,6 @@ public class UserController : ControllerBase
             id = user.Id
         }, user);
     }
-
-    //[HttpPost("Register")]
-    //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    //[ProducesResponseType<User>(StatusCodes.Status201Created)]
-    //public async Task<IActionResult> Register(RegisterDto userDto, CancellationToken cancellationToken)
-    //{
-    //    ApplicationUser user = new ApplicationUser();
-    //    user.UserName = userDto.UserName;
-    //    user.Email = userDto.Email;
-    //    IdentityResult result = await _userManager.CreateAsync(user, userDto.Password!);
-    //    if (result.Succeeded)
-    //    {
-    //        return Ok("Account Add Success");
-    //    }
-    //    return BadRequest(result.Errors.FirstOrDefault());
-    //}
-
 
     [HttpPost("Login")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

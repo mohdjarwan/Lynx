@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using ServiceStack.DataAnnotations;
+﻿using ServiceStack.DataAnnotations;
 
 namespace Lynx.Core.Entities;
 
@@ -30,5 +29,7 @@ public class User
     [Unique]
     [Required]
     public int TenantId { get; set; }
+
+    public bool IsDeleted { get; set; }
 
 }
