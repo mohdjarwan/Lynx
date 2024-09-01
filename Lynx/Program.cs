@@ -1,113 +1,84 @@
-using System.Text;
-using Microsoft.OpenApi.Models;
-using Lynx.Infrastructure.Data;
-using Lynx.Infrastructure.Mappers;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Lynx.Infrastructure.Repository;
-using System.Text.Json.Serialization;
-using Lynx.Infrastructure.Repository.Interfaces;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Lynx.Core.Entities;
+using Lynx;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-var config = builder.Configuration;
-builder.Services.AddDbContext<ApplicationDbContext>(option =>
+builder.Services
+    .AddAuthentication(x =>
+    {
+        x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(x =>
+    {
+        x.RequireHttpsMetadata = false;
+        x.SaveToken = true;
+        x.TokenValidationParameters = new TokenValidationParameters
+        {
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(AuthSettings.PrivateKey)),
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
+    });
+builder.Services.AddAuthorization(options =>
 {
-    option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultSQLConnection"));
+    options.AddPolicy("Admin", policy => policy.RequireRole("admin"));
 });
 
-builder.Services.AddIdentity<ApplicationUser,IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
-
-// Add services to the container.
-builder.Services.AddAuthentication(opt =>
+builder.Services.AddTransient<AuthService>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
 {
-    opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    opt.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(opt =>{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthCore API", Version = "v1" });
 
-    opt.SaveToken = true;
-    //opt.RequireHttpsMetadata=true;
-    opt.TokenValidationParameters = new TokenValidationParameters()
+    var securityScheme = new OpenApiSecurityScheme
     {
-        
-        ValidateIssuer = false,
-        ValidIssuer = config["JWT:Issuer"],
-        ValidateAudience = false,
-        ValidAudience = config["JWT:audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JWT:secret"]!)),
-        ValidateLifetime = false, // Disable lifetime validation
-        ClockSkew = TimeSpan.Zero
-
+        Name = "JWT Authentication",
+        Description = "Enter your JWT token in this field",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     };
 
-});
+    c.AddSecurityDefinition("Bearer", securityScheme);
 
-builder.Services.AddAuthorization();
-
-
-builder.Services.AddControllers().AddJsonOptions(opt =>
-{
-    opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-});
-
-
-builder.Services.AddSwaggerGen(swagger =>
-{
-    swagger.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Version = "v1",
-        Title = "asp.net 8 web api",
-        Description = "Authentication with JWT"
-    });
-    swagger.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header
-    });
-    swagger.AddSecurityRequirement(new OpenApiSecurityRequirement
+    var securityRequirement = new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
                 Reference = new OpenApiReference
                 {
-                    Type =ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
-            },Array.Empty<string>()
+            },
+            new string[] {}
         }
-    });
+    };
+
+    c.AddSecurityRequirement(securityRequirement);
 });
-
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddProblemDetails();
-
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IUserMapper, UserMapper>();
-builder.Services.AddScoped<ITenantMapper, TenantMapper>();
-builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
-
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "AuthCore API V1");
+    });
+}
+
+app.MapPost("/authenticate", (Users user, AuthService authService)
+    => authService.GenerateToken(user));
+
+app.MapGet("/signin", () => "User Authenticated Successfully!").RequireAuthorization("Admin");
 
 app.Run();

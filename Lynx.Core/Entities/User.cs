@@ -30,4 +30,6 @@ public class User
     [Unique]
     [Required]
     public int TenantId { get; set; }
+
+    public bool IsDeleted { get; set; }
 }
