@@ -28,4 +28,8 @@
     <ProjectReference Include="..\Lynx.Core\Lynx.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 </Project>

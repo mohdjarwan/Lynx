@@ -14,29 +14,29 @@ using System.Text;
 
 namespace Lynx.Controllers;
 
-
 [ApiController]
 //[Authorize]
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    //  private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IAuthService _authService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserMapper _mapper;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IConfiguration _configuration;
     public UserController(IUnitOfWork unitOfWork, IUserMapper mapper, IPasswordHasher passwordHasher,
-        IConfiguration configuration/*, UserManager<ApplicationUser> userManager*/)
+        IConfiguration configuration, IAuthService auth)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _passwordHasher = passwordHasher;
         _configuration = configuration;
-       /* _userManager = userManager;*/
+        _authService = auth;
     }
 
-    [HttpGet]
     [Authorize]
+    [HttpGet]
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<IEnumerable<User>>(StatusCodes.Status200OK)]
@@ -117,23 +117,16 @@ public class UserController : ControllerBase
     //}
 
 
-    /*[HttpPost("Login")]
+    [HttpPost("Login")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<User>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Login(LoginDto loginDto, CancellationToken cancellationToken)
     {
-        ApplicationUser user = (await _userManager.FindByNameAsync(loginDto.UserName!))!;
+        var user = await _unitOfWork.Users.GetAsync(u => u.UserName == loginDto.UserName, cancellationToken);
+        var MyToken = _authService.GenerateToken(user);
+        return Ok(MyToken);
+    }
 
-                return Ok(new
-                {
-                    token = new JwtSecurityTokenHandler().WriteToken(MyToken),
-                    expiration = MyToken.ValidTo
-                });
-            
-        
-        return BadRequest();
-
-    }*/
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

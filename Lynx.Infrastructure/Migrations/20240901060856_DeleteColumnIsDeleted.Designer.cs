@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lynx.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240830142140_deleteFromApplicationUser")]
-    partial class deleteFromApplicationUser
+    [Migration("20240901060856_DeleteColumnIsDeleted")]
+    partial class DeleteColumnIsDeleted
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
