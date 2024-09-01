@@ -103,7 +103,7 @@ public class UserController : ControllerBase
     [ProducesResponseType<User>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Login(LoginDto loginDto, CancellationToken cancellationToken)
     {
-        var user = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email, cancellationToken);
+        var user = await _unitOfWork.Users.GetAsync(u => u.UserName == loginDto.UserName, cancellationToken);
         if (user is null)
         {
             return Unauthorized("Invalid Email");
@@ -126,7 +126,7 @@ public class UserController : ControllerBase
             issuer: _configuration["JWT:Issuer"],
             audience: _configuration["JWT:audience"],
             claims: claims,
-            expires: DateTime.Now.AddHours(1),
+            expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: creds
         );
         return Ok(new
