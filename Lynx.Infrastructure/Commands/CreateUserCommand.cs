@@ -17,6 +17,14 @@ namespace Lynx.Infrastructure.Commands
 
         public bool IsDeleted{ get; set; }
 
+        public string? CreatedBy { get; set; }
+
+        public string? LastModifiedBy { get; set; }
+
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        public DateTime LastModifiedDate { get; set; } = DateTime.Now;
+
     }
     public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
     {

@@ -2,7 +2,7 @@
 
 namespace Lynx.Core.Entities;
 
-public class User 
+public class User : Common
 {
     public int Id { get; set; }
 
@@ -31,5 +31,7 @@ public class User
     public int TenantId { get; set; }
 
     public bool IsDeleted { get; set; }
+
+
 
 }

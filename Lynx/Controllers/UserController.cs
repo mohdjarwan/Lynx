@@ -4,7 +4,6 @@ using Lynx.Infrastructure.Data;
 using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository.Interfaces;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lynx.Controllers;
@@ -17,14 +16,14 @@ public class UserController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserMapper _mapper;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IConfiguration _configuration;
+   // private readonly IConfiguration _configuration;
     public UserController(IUnitOfWork unitOfWork, IUserMapper mapper, IPasswordHasher passwordHasher,
-        IConfiguration configuration, IAuthService auth)
+       /* IConfiguration configuration,*/ IAuthService auth)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _passwordHasher = passwordHasher;
-        _configuration = configuration;
+        //_configuration = configuration;
         _authService = auth;
     }
 
@@ -47,7 +46,7 @@ public class UserController : ControllerBase
         });
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("new")/*("{id:int}")*/]
     [ProducesResponseType<User>(StatusCodes.Status200OK)]
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
@@ -68,31 +67,13 @@ public class UserController : ControllerBase
             User = _mapper.Map(user)
         });
     }
-    [HttpGet("IsDeleted")]
-    [ProducesResponseType<User>(StatusCodes.Status200OK)]
-    [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
-    [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetValueusingIsDeleted(bool IsDeleted, CancellationToken cancellationToken)
-    {
-     
-        var user = await _unitOfWork.Users.GetAsync(u => u.IsDeleted == IsDeleted, cancellationToken);
-        if (user is null)
-        {
-            return NotFound();
-        }
-
-        return Ok(new
-        {
-            User = _mapper.Map(user)
-        });
-    }
 
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<User>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Post([FromBody] CreateUserCommand command, CancellationToken cancellationToken)
-    {
-        var user = new User
+    {   
+    var user = new User
         {
             UserName = command.name,
             Email = command.email,
@@ -100,7 +81,12 @@ public class UserController : ControllerBase
             FirstName = command.firstname,
             LastName = command.lastname,
             TenantId = command.tenantid,
-            IsDeleted = command.IsDeleted
+            IsDeleted = command.IsDeleted,
+            CreatedBy = command.CreatedBy!,
+            LastModifiedBy = command.LastModifiedBy!,
+            CreatedDate = command.CreatedDate,
+            LastModifiedDate = command.LastModifiedDate
+
         };
 
         await _unitOfWork.Users.Add(user);
@@ -121,7 +107,6 @@ public class UserController : ControllerBase
         var MyToken = _authService.GenerateToken(user);
         return Ok(MyToken);
     }
-
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -151,6 +136,7 @@ public class UserController : ControllerBase
     {
         var user = await _unitOfWork.Users.GetAsync(u => u.Id == id, cancellationToken);
         user.Email = command.email;
+        user.CreatedBy = command.createdby;
         await _unitOfWork.SaveAsync(cancellationToken);
 
         return NoContent();
