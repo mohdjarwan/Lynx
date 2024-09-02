@@ -46,7 +46,7 @@ public class UserController : ControllerBase
         });
     }
 
-    [HttpGet("new")/*("{id:int}")*/]
+    [HttpGet("{id:int}")]
     [ProducesResponseType<User>(StatusCodes.Status200OK)]
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
@@ -137,6 +137,7 @@ public class UserController : ControllerBase
         var user = await _unitOfWork.Users.GetAsync(u => u.Id == id, cancellationToken);
         user.Email = command.email;
         user.CreatedBy = command.createdby;
+        user.CreatedDate = command.createdDate;
         await _unitOfWork.SaveAsync(cancellationToken);
 
         return NoContent();
