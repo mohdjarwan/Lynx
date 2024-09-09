@@ -1,12 +1,13 @@
 ﻿using Lynx.Core.Entities;
+using Lynx.IServices;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace Lynx;
+namespace Lynx.Services;
 
-public class AuthService :IAuthService
+public class AuthService : IAuthService
 {
     public string GenerateToken(User user)
     {

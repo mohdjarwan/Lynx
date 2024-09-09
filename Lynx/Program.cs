@@ -4,6 +4,8 @@ using Lynx.Infrastructure.Data;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository;
 using Lynx.Infrastructure.Repository.Interfaces;
+using Lynx.IServices;
+using Lynx.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -18,6 +20,13 @@ builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantMapper, TenantMapper>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddHttpClient<IEmailService, EmailService>(opt =>
+{
+    opt.BaseAddress = new Uri("http://api.User/id/1");
+});
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

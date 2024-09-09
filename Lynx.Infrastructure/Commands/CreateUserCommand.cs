@@ -3,7 +3,7 @@ namespace Lynx.Infrastructure.Commands
 {
     public class CreateUserCommand
     {
-        public string? name { get; set; }
+        public string? username { get; set; }
 
         public string? email { get; set; }
 
@@ -32,7 +32,7 @@ namespace Lynx.Infrastructure.Commands
         {
             RuleFor(c => c.email).NotNull();
 
-            RuleFor(c => c.name).NotEmpty();
+            RuleFor(c => c.username).NotEmpty();
         }
     }
 }

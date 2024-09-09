@@ -8,12 +8,12 @@ namespace Lynx.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class TenantController : ControllerBase
+public class TenantsController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantMapper _mapper;
 
-    public TenantController(IUnitOfWork unitOfWork, ITenantMapper mapper)
+    public TenantsController(IUnitOfWork unitOfWork, ITenantMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
