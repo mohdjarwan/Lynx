@@ -5,30 +5,40 @@ using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Lynx.IServices;
+using Lynx.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lynx.Controllers;
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IEmailService _email;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserMapper _mapper;
     private readonly IPasswordHasher _passwordHasher;
    // private readonly IConfiguration _configuration;
     public UsersController(IUnitOfWork unitOfWork, IUserMapper mapper, IPasswordHasher passwordHasher,
-       /* IConfiguration configuration,*/ IAuthService auth)
+       /* IConfiguration configuration,*/ IAuthService auth, IEmailService email)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _passwordHasher = passwordHasher;
         //_configuration = configuration;
         _authService = auth;
+        _email = email;
+    }
+    [HttpPost("send")]
+    public async Task<IActionResult> SendEmail(string email, string subject, string message)
+    {
+        await _email.SendEmailAsync(email, subject, message);
+        return Ok("Email sent successfully!");
     }
 
-   // [Authorize]
+    // [Authorize]
     [HttpGet]
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
@@ -99,6 +109,7 @@ public class UsersController : ControllerBase
         }, user);
     }
 
+    [AllowAnonymous]
     [HttpPost("Login")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<User>(StatusCodes.Status201Created)]
