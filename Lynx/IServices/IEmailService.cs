@@ -1,6 +1,4 @@
-﻿using Lynx.Core.Entities;
-
-namespace Lynx.IServices;
+﻿namespace Lynx.IServices;
 
 public interface IEmailService
 {

@@ -1,8 +1,6 @@
 ﻿using Lynx.Infrastructure.Data;
-using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Linq.Expressions;
 
 namespace Lynx.Infrastructure.Repository;
@@ -17,9 +15,9 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet = _db.Set<T>();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<IEnumerable<T>> GetAllAsync(/*CancellationToken cancellationToken*/)
     {
-        return await _dbSet.ToListAsync(cancellationToken);
+        return await _dbSet.ToListAsync(/*cancellationToken*/);
     }
 
     public async Task<T> GetAsync(Expression<Func<T, bool>>? filter, CancellationToken cancellationToken)

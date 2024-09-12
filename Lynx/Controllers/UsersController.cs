@@ -5,7 +5,6 @@ using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Lynx.IServices;
-using Lynx.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,10 +14,10 @@ namespace Lynx.Controllers;
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private readonly IAuthService  _authService;
     private readonly IEmailService _email;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IUserMapper _mapper;
+    private readonly IUnitOfWork   _unitOfWork;
+    private readonly IUserMapper   _mapper;
     private readonly IPasswordHasher _passwordHasher;
    // private readonly IConfiguration _configuration;
     public UsersController(IUnitOfWork unitOfWork, IUserMapper mapper, IPasswordHasher passwordHasher,
@@ -43,9 +42,9 @@ public class UsersController : ControllerBase
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<IEnumerable<User>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(/*CancellationToken cancellationToken*/)
     {
-        var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
+        var users = await _unitOfWork.Users.GetAllAsync(/*cancellationToken*/);
         if (users is null)
         {
             return NotFound();

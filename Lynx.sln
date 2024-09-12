@@ -3,11 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lynx", "Lynx\Lynx.csproj", "{0768FEA3-5865-4D29-A252-A0E6339B792B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lynx", "Lynx\Lynx.csproj", "{0768FEA3-5865-4D29-A252-A0E6339B792B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lynx.Infrastructure", "Lynx.Infrastructure\Lynx.Infrastructure.csproj", "{58400A8C-F659-4533-84B8-BA26BF634122}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lynx.Infrastructure", "Lynx.Infrastructure\Lynx.Infrastructure.csproj", "{58400A8C-F659-4533-84B8-BA26BF634122}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lynx.Core", "Lynx.Core\Lynx.Core.csproj", "{FDC06DDB-681B-4E4F-BC42-16A27BA68468}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lynx.Core", "Lynx.Core\Lynx.Core.csproj", "{FDC06DDB-681B-4E4F-BC42-16A27BA68468}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lynx.Tests", "Lynx.Tests\Lynx.Tests.csproj", "{DF44A719-872C-4BE6-9178-D17F9B878087}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{FDC06DDB-681B-4E4F-BC42-16A27BA68468}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDC06DDB-681B-4E4F-BC42-16A27BA68468}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDC06DDB-681B-4E4F-BC42-16A27BA68468}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF44A719-872C-4BE6-9178-D17F9B878087}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF44A719-872C-4BE6-9178-D17F9B878087}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF44A719-872C-4BE6-9178-D17F9B878087}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF44A719-872C-4BE6-9178-D17F9B878087}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
