@@ -1,4 +1,5 @@
-﻿using Lynx.Controllers;
+﻿using FakeItEasy;
+using Lynx.Controllers;
 using Lynx.Core.Entities;
 using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Data;
@@ -77,7 +78,7 @@ public class UsersControllerTestsUsingMock
         var userDto = new UserDto { Id = userId, UserName = "testuser", Email = "test@example.com" };
 
         // Setup mock behavior for GetAsync and Map
-        _mockUnitOfWork.Setup(uow => uow.Users.GetAsync(u=>u.Id == userId, cancellationToken))
+        _mockUnitOfWork.Setup(uow => uow.Users.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), cancellationToken))
                        .ReturnsAsync(user);
         _mockUserMapper.Setup(mapper => mapper.Map(user)).Returns(userDto);
 
@@ -91,9 +92,9 @@ public class UsersControllerTestsUsingMock
         var userProperty = resultObject!.GetType().GetProperty("User"); 
         var returnedUser = (UserDto)userProperty!.GetValue(resultObject)!;
 
-        Assert.Equal(userId, user.Id);
-        //Assert.Equal(userDto.UserName, returnedUser.UserName);
-        //Assert.Equal(userDto.Email, returnedUser.Email);
+        Assert.Equal(userDto.Id, returnedUser.Id);
+        Assert.Equal(userDto.UserName, returnedUser.UserName);
+        Assert.Equal(userDto.Email, returnedUser.Email);
     }
     [Fact]
     public async Task Post_ShouldReturnCreatedAtAction_WhenUserIsCreated()
@@ -101,7 +102,6 @@ public class UsersControllerTestsUsingMock
         // Arrange
         var command = new CreateUserCommand
         {
-            id = 1,
             username = "testuser",
             email = "testuser@example.com",
             password = "password123",
@@ -117,7 +117,6 @@ public class UsersControllerTestsUsingMock
 
         var user = new User
         {
-            Id = 1,  // Mock the generated Id
             UserName = command.username,
             Email = command.email,
             Password = "hashedpassword",  // The hashed password
@@ -132,17 +131,50 @@ public class UsersControllerTestsUsingMock
         };
 
         _mockPasswordHasher.Setup(p => p.Hash(command.password!)).Returns("hashedpassword");
-        _mockUnitOfWork.Setup(u => u.Users.Add(It.IsAny<User>())).Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.Users.Add(user)).Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveAsync(It.IsAny<CancellationToken>())).Returns(Task.FromResult(1));
 
         // Act
         var result = await _controller.Post(command, CancellationToken.None);
 
         // Assert
-
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
         Assert.Equal(nameof(_controller.GetValue), createdAtActionResult.ActionName);
        Assert.Equal(user.Id, ((User)createdAtActionResult.Value!).Id);
     }
+
+    [Fact]
+    public async Task Delete_ReturnsNoContent_WhenUserIsDeleted()
+    {
+        // Arrange
+        var id = 1;
+        var user = new User { Id = id };
+        _mockUnitOfWork.Setup(uow => uow.Users.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), cancellationToken))
+                       .ReturnsAsync(user);
+
+        _mockUnitOfWork.Setup(uow =>uow.Users.Delete(user)).Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.SaveAsync(It.IsAny<CancellationToken>())).Returns(Task.FromResult(1));
+
+        // Act
+        var result = await _controller.Delete(id, CancellationToken.None);
+        var actionResult = Assert.IsType<ActionResult<User>>(result);
+
+        // Assert
+        Assert.IsType<NoContentResult>(actionResult.Result);
+    }
+    [Fact]
+    public async Task Delete_ReturnsBadRequest_WhenIdIsInvalid()
+    {
+        // Arrange
+        var id = -1;
+
+        // Act
+        var result = await _controller.Delete(id, cancellationToken);
+
+        // Assert
+        var actionResult = Assert.IsType<ActionResult<User>>(result);
+        Assert.IsType<BadRequestResult>(actionResult.Result);
+    }
+
 
 }

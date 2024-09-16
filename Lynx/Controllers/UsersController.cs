@@ -85,7 +85,6 @@ public class UsersController : ControllerBase
     {   
     var user = new User
         {
-            Id = command.id,
             UserName = command.username,
             Email = command.email,
             Password = _passwordHasher.Hash(command.password!),

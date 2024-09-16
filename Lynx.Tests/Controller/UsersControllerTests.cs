@@ -1,13 +1,19 @@
 ﻿using FakeItEasy;
 using Lynx.Controllers;
 using Lynx.Core.Entities;
+using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Data;
 using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Mappers;
+using Lynx.Infrastructure.Repository;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Lynx.IServices;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Moq;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Lynx.Tests.Controller;
 
@@ -51,13 +57,9 @@ public class UsersControllerTests
         // Arrange
         var id = 1;
 
-
         A.CallTo(() => _fakeUnitOfWork.Users.GetAsync(
-            A<Expression<Func<User, bool>>>.That.Matches(u => u.Compile()(new User { Id = id })),
-            cancellationToken))
-            .Returns(Task.FromResult<User>(null!));
-
-
+                                                    A<Expression<Func<User, bool>>>.Ignored,
+                                                    A<CancellationToken>.Ignored)).Returns(Task.FromResult<User>(null!));
         // Act
         var result = await _controller.GetValue(id, cancellationToken);
 
@@ -69,16 +71,15 @@ public class UsersControllerTests
     public async Task GetValue_ReturnsOk_WhenUserExists()
     {
         // Arrange
-        var id = 1;
-        var user = new User { Id = id };
-        var userDto = new UserDto { Id = id };
-
+        var id = 6;
+        var user = A.Fake<User>();
+        var userDto = A.Fake<UserDto>();
 
         A.CallTo(() => _fakeUnitOfWork.Users.GetAsync(
-            A<Expression<Func<User, bool>>>.That.Matches(u => u.Compile()(new User { Id = id })),
-            cancellationToken))
-        .Returns(Task.FromResult(user));
-        A.CallTo(() => _fakeUserMapper.Map(user));
+                                                    A<Expression<Func<User, bool>>>.Ignored,
+                                                    A<CancellationToken>.Ignored)).Returns(user);
+
+        A.CallTo(() => _fakeUserMapper.Map(user)).Returns(userDto);
 
         // Act
         var result = await _controller.GetValue(id, cancellationToken);
@@ -90,9 +91,83 @@ public class UsersControllerTests
         var userProperty = resultObject!.GetType().GetProperty("User");
         var returnedUser = (UserDto)userProperty!.GetValue(resultObject)!;
 
-       Assert.Equal(userDto.Id, returnedUser.Id);
-       // Assert.Equal(userDto.UserName, returnedUser.UserName);
-       // Assert.Equal(userDto.Email, returnedUser.Email);
+        Assert.Equal(userDto.Id, returnedUser.Id);
+        Assert.Equal(userDto.UserName, returnedUser.UserName);
+        Assert.Equal(userDto.Email, returnedUser.Email);
+    }
+
+    [Fact]
+    public async Task Post_ReturnCreatedAction_WhenUserIsCreated()
+    {
+        // Arrange
+        var command = A.Fake<CreateUserCommand>();
+        var user = A.Fake<User>();
+
+        A.CallTo(() => _fakeUnitOfWork.Users.Add(It.IsAny<User>())).Returns(Task.CompletedTask);
+        A.CallTo(() => _fakePasswordHasher.Hash(command.password!)).Returns("hashedpassword");
+        A.CallTo(() => _fakeUnitOfWork.SaveAsync(A<CancellationToken>.Ignored)).Returns(Task.FromResult(1));
+
+
+        // Act
+        var result = await _controller.Post(command, CancellationToken.None);
+
+        // Assert
+        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
+        Assert.Equal("GetValue", createdAtActionResult.ActionName);
+        Assert.Equal(user.Id, ((User)createdAtActionResult.Value!).Id);
+
+    }
+
+    [Fact]
+    public async Task Delete_ReturnsNoContent_WhenUserIsDeleted()
+    {
+        // Arrange
+        var id = 1;
+        var user = new User { Id = id };
+
+        A.CallTo(() => _fakeUnitOfWork.Users.GetAsync(
+                                                    A<Expression<Func<User, bool>>>.Ignored,
+                                                    A<CancellationToken>.Ignored)).Returns(user);
+
+        A.CallTo(() => _fakeUnitOfWork.Users.Delete(A<User>.Ignored)).Returns(Task.CompletedTask);
+        A.CallTo(() => _fakeUnitOfWork.SaveAsync(A<CancellationToken>.Ignored)).Returns(Task.FromResult(1));
+
+        // Act
+        var result = await _controller.Delete(id, CancellationToken.None);
+        var actionResult = Assert.IsType<ActionResult<User>>(result);
+
+        // Assert
+        Assert.IsType<NoContentResult>(actionResult.Result);
+    }
+    [Fact]
+    public async Task Delete_ReturnsBadRequest_WhenIdIsInvalid()
+    {
+        // Arrange
+        var id = -1;
+
+        // Act
+        var result = await _controller.Delete(id, cancellationToken);
+
+        // Assert
+        var actionResult = Assert.IsType<ActionResult<User>>(result);
+        Assert.IsType<BadRequestResult>(actionResult.Result);
+    }
+    [Fact]
+    public async Task Delete_ReturnsNotFound_WhenUserDoesNotExist()
+    {
+        // Arrange
+        var id = 1;
+        A.CallTo(() => _fakeUnitOfWork.Users.GetAsync(
+                                                    A<Expression<Func<User, bool>>>.Ignored,
+                                                    A<CancellationToken>.Ignored)).Returns((User)null!);
+
+        // Act
+        var result = await _controller.Delete(id, cancellationToken);
+
+        // Assert
+
+        var actionResult = Assert.IsType<ActionResult<User>>(result);
+        Assert.IsType<NotFoundResult>(actionResult.Result);
     }
 
 }
