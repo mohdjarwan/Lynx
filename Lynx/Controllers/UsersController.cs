@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lynx.Controllers;
-[Authorize]
+//[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
@@ -42,9 +42,9 @@ public class UsersController : ControllerBase
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<IEnumerable<User>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Get(/*CancellationToken cancellationToken*/)
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        var users = await _unitOfWork.Users.GetAllAsync(/*cancellationToken*/);
+        var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
         if (users is null)
         {
             return NotFound();
@@ -56,10 +56,10 @@ public class UsersController : ControllerBase
         });
     }
 
-    [HttpGet("{id:int}")]
     [ProducesResponseType<User>(StatusCodes.Status200OK)]
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetValue(int id, CancellationToken cancellationToken)
     {
         if (id <= 0)
@@ -85,6 +85,7 @@ public class UsersController : ControllerBase
     {   
     var user = new User
         {
+            Id = command.id,
             UserName = command.username,
             Email = command.email,
             Password = _passwordHasher.Hash(command.password!),
@@ -118,7 +119,6 @@ public class UsersController : ControllerBase
         var MyToken = _authService.GenerateToken(user);
         return Ok(MyToken);
     }
-
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

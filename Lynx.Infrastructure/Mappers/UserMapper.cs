@@ -6,9 +6,12 @@ namespace Lynx.Infrastructure.Mappers;
 public interface IUserMapper
 {
     UserDto Map(User user);
+
 }
 public class UserMapper:IUserMapper
 {
+
+
     public UserDto Map(User user)
     {
         return new()

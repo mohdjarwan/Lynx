@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Lynx.Infrastructure.Dto
+﻿namespace Lynx.Infrastructure.Dto
 {
     public class TokenDto
     {
