@@ -31,9 +31,13 @@ public class UsersController : ControllerBase
         _email = email;
     }
     [HttpPost("send")]
-    public async Task<IActionResult> SendEmail(string email, string subject, string message)
+    public async Task<IActionResult> SendEmail( CreateEmail create)
     {
-        await _email.SendEmailAsync(email, subject, message);
+        var email = create.email;
+        var subject = create.subject;
+        var message = create.message;
+
+        await _email.SendEmailAsync(email!, subject!, message!);
         return Ok("Email sent successfully!");
     }
 
@@ -56,10 +60,10 @@ public class UsersController : ControllerBase
         });
     }
 
+    [HttpGet("{id:int}")]
     [ProducesResponseType<User>(StatusCodes.Status200OK)]
     [ProducesResponseType<User>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
-    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetValue(int id, CancellationToken cancellationToken)
     {
         if (id <= 0)
@@ -118,6 +122,7 @@ public class UsersController : ControllerBase
         var MyToken = _authService.GenerateToken(user);
         return Ok(MyToken);
     }
+
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

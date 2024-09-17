@@ -1,5 +1,4 @@
-﻿using FakeItEasy;
-using Lynx.Controllers;
+﻿using Lynx.Controllers;
 using Lynx.Core.Entities;
 using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Data;
@@ -21,8 +20,6 @@ public class UsersControllerTestsUsingMock
     private readonly Mock<IAuthService> _mockAuthService;
     private readonly Mock<IEmailService> _mockEmailService;
     private readonly UsersController _controller;
-    CancellationToken cancellationToken = new CancellationToken();
-
 
     public UsersControllerTestsUsingMock()
     {
@@ -46,7 +43,7 @@ public class UsersControllerTestsUsingMock
         var invalidUserId = 0;
 
         // Act
-        var result = await _controller.GetValue(invalidUserId, cancellationToken);
+        var result = await _controller.GetValue(invalidUserId, default);
 
         // Assert
         Assert.IsType<BadRequestResult>(result);
@@ -58,10 +55,10 @@ public class UsersControllerTestsUsingMock
         // Arrange
         var invalidUserId = 6;
 
-        _mockUnitOfWork.Setup(uow => uow.Users.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), cancellationToken))!.ReturnsAsync((User)null!);
+        _mockUnitOfWork.Setup(uow => uow.Users.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), default))!.ReturnsAsync((User)null!);
 
         // Act
-        var result = await _controller.GetValue(invalidUserId, cancellationToken);
+        var result = await _controller.GetValue(invalidUserId, default);
 
         // Assert
         Assert.IsType<NotFoundResult>(result);
@@ -83,7 +80,7 @@ public class UsersControllerTestsUsingMock
         _mockUserMapper.Setup(mapper => mapper.Map(user)).Returns(userDto);
 
         // Act
-        var result = await _controller.GetValue(userId, cancellationToken);
+        var result = await _controller.GetValue(userId, default);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
@@ -96,6 +93,7 @@ public class UsersControllerTestsUsingMock
         Assert.Equal(userDto.UserName, returnedUser.UserName);
         Assert.Equal(userDto.Email, returnedUser.Email);
     }
+
     [Fact]
     public async Task Post_ShouldReturnCreatedAtAction_WhenUserIsCreated()
     {
@@ -135,7 +133,7 @@ public class UsersControllerTestsUsingMock
         _mockUnitOfWork.Setup(u => u.SaveAsync(It.IsAny<CancellationToken>())).Returns(Task.FromResult(1));
 
         // Act
-        var result = await _controller.Post(command, CancellationToken.None);
+        var result = await _controller.Post(command, default);
 
         // Assert
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
@@ -149,19 +147,20 @@ public class UsersControllerTestsUsingMock
         // Arrange
         var id = 1;
         var user = new User { Id = id };
-        _mockUnitOfWork.Setup(uow => uow.Users.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), cancellationToken))
+        _mockUnitOfWork.Setup(uow => uow.Users.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), default))
                        .ReturnsAsync(user);
 
         _mockUnitOfWork.Setup(uow =>uow.Users.Delete(user)).Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveAsync(It.IsAny<CancellationToken>())).Returns(Task.FromResult(1));
 
         // Act
-        var result = await _controller.Delete(id, CancellationToken.None);
+        var result = await _controller.Delete(id, default);
         var actionResult = Assert.IsType<ActionResult<User>>(result);
 
         // Assert
         Assert.IsType<NoContentResult>(actionResult.Result);
     }
+
     [Fact]
     public async Task Delete_ReturnsBadRequest_WhenIdIsInvalid()
     {
@@ -169,12 +168,11 @@ public class UsersControllerTestsUsingMock
         var id = -1;
 
         // Act
-        var result = await _controller.Delete(id, cancellationToken);
+        var result = await _controller.Delete(id, default);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<User>>(result);
         Assert.IsType<BadRequestResult>(actionResult.Result);
     }
-
 
 }

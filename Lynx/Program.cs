@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using ServiceStack;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,11 +22,34 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantMapper, TenantMapper>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-builder.Services.AddHttpClient<IEmailService, EmailService>(opt =>
+builder.Services.AddHttpClient<IEmailService, OneService>(opt =>
 {
     opt.BaseAddress = new Uri("http://api.User/id/1");
 });
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailService>(provider =>
+{
+    var httpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
+    var serviceType = httpContextAccessor.HttpContext?.Request.Headers["x-provider-version"].ToString();
+
+    if (serviceType == "1")
+    {
+        return provider.GetRequiredService<OneService>();
+    }
+    else if (serviceType == "2")
+    {
+        return provider.GetRequiredService<TwoService>();
+    }
+    else
+    {
+        return provider.GetRequiredService<TwoService>();
+    }
+});
+builder.Services.AddScoped<OneService>();
+builder.Services.AddScoped<TwoService>();
+
+// Register the specific services
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();  // Required to access HttpContext in services
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

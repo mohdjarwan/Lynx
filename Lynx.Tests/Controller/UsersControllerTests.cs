@@ -5,15 +5,11 @@ using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Data;
 using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Mappers;
-using Lynx.Infrastructure.Repository;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Lynx.IServices;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Linq.Expressions;
-using System.Threading;
 
 namespace Lynx.Tests.Controller;
 
@@ -25,7 +21,6 @@ public class UsersControllerTests
     private readonly IEmailService _fakeEmailService;
     private readonly IPasswordHasher _fakePasswordHasher;
     private readonly UsersController _controller;
-    CancellationToken cancellationToken = new CancellationToken();
 
     public UsersControllerTests()
     {
@@ -39,13 +34,13 @@ public class UsersControllerTests
     }
 
     [Fact]
-    public async Task GetValue_ReturnsBadRequest_WhenIdIsInvalid()
+    public async Task User_bad_request_if_id_is_invalid  /*GetValue_ReturnsBadRequest_WhenIdIsInvalid*/()
     {
         // Arrange
         var id = 0;
 
         // Act
-        var result = await _controller.GetValue(id, cancellationToken);
+        var result = await _controller.GetValue(id, default);
 
         // Assert
         Assert.IsType<BadRequestResult>(result);
@@ -61,7 +56,7 @@ public class UsersControllerTests
                                                     A<Expression<Func<User, bool>>>.Ignored,
                                                     A<CancellationToken>.Ignored)).Returns(Task.FromResult<User>(null!));
         // Act
-        var result = await _controller.GetValue(id, cancellationToken);
+        var result = await _controller.GetValue(id, default);
 
         // Assert
         Assert.IsType<NotFoundResult>(result);
@@ -82,7 +77,7 @@ public class UsersControllerTests
         A.CallTo(() => _fakeUserMapper.Map(user)).Returns(userDto);
 
         // Act
-        var result = await _controller.GetValue(id, cancellationToken);
+        var result = await _controller.GetValue(id, default);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
@@ -109,7 +104,7 @@ public class UsersControllerTests
 
 
         // Act
-        var result = await _controller.Post(command, CancellationToken.None);
+        var result = await _controller.Post(command, default);
 
         // Assert
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
@@ -133,12 +128,13 @@ public class UsersControllerTests
         A.CallTo(() => _fakeUnitOfWork.SaveAsync(A<CancellationToken>.Ignored)).Returns(Task.FromResult(1));
 
         // Act
-        var result = await _controller.Delete(id, CancellationToken.None);
+        var result = await _controller.Delete(id, default);
         var actionResult = Assert.IsType<ActionResult<User>>(result);
 
         // Assert
         Assert.IsType<NoContentResult>(actionResult.Result);
     }
+
     [Fact]
     public async Task Delete_ReturnsBadRequest_WhenIdIsInvalid()
     {
@@ -146,12 +142,13 @@ public class UsersControllerTests
         var id = -1;
 
         // Act
-        var result = await _controller.Delete(id, cancellationToken);
+        var result = await _controller.Delete(id, default);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<User>>(result);
         Assert.IsType<BadRequestResult>(actionResult.Result);
     }
+    
     [Fact]
     public async Task Delete_ReturnsNotFound_WhenUserDoesNotExist()
     {
@@ -160,9 +157,8 @@ public class UsersControllerTests
         A.CallTo(() => _fakeUnitOfWork.Users.GetAsync(
                                                     A<Expression<Func<User, bool>>>.Ignored,
                                                     A<CancellationToken>.Ignored)).Returns((User)null!);
-
         // Act
-        var result = await _controller.Delete(id, cancellationToken);
+        var result = await _controller.Delete(id, default);
 
         // Assert
 
