@@ -6,7 +6,8 @@ namespace Lynx.Infrastructure.Repository;
 
 public class UserRepository :Repository<User>,IUserRepository
 {
-    private readonly ApplicationDbContext _db;
+
+    private new readonly ApplicationDbContext _db;
 
     public UserRepository(ApplicationDbContext db) : base(db)
     {

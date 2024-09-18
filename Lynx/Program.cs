@@ -1,6 +1,8 @@
+using FluentValidation;
 using Lynx;
-using Lynx.Core.Entities;
+using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Data;
+using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository;
 using Lynx.Infrastructure.Repository.Interfaces;
@@ -11,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ServiceStack;
+using System;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,13 +22,22 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ITenantMapper, TenantMapper>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITenantMapper, TenantMapper>();
+builder.Services.AddScoped<IValidator<UserDto>, UserDtoValidator>();
+builder.Services.AddScoped<IValidator<CreateUserCommand>, CreateUserCommandValidator>();
 
 builder.Services.AddHttpClient<IEmailService, OneService>(opt =>
 {
-    opt.BaseAddress = new Uri("http://api.User/id/1");
+    opt.BaseAddress = new Uri(builder.Configuration.GetSection("Email:Uri").Value!);
 });
+builder.Services.AddHttpClient<IEmailService, TwoService>(opt =>
+{
+    opt.BaseAddress = new Uri(builder.Configuration.GetSection("Email:Uri").Value!);
+});
+
+builder.Services.AddScoped<OneService>();
+builder.Services.AddScoped<TwoService>();
 builder.Services.AddScoped<IEmailService>(provider =>
 {
     var httpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
@@ -41,15 +53,16 @@ builder.Services.AddScoped<IEmailService>(provider =>
     }
     else
     {
+        // For Postman
+        //throw new Exception("Invalid Email Service Type header.");
+
+        //For Swagger
         return provider.GetRequiredService<TwoService>();
+
     }
 });
-builder.Services.AddScoped<OneService>();
-builder.Services.AddScoped<TwoService>();
 
-// Register the specific services
-builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();  // Required to access HttpContext in services
-
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -89,6 +102,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(option =>
     option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultSQLConnection"));
 });
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ProducerService>();
 builder.Services.AddScoped<IUserMapper, UserMapper>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
@@ -126,5 +140,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.MapGet("/event-producing", async (ProducerService producer, CancellationToken c) =>
+{
+    await producer.ProduceAsync(c);
+    return "Even Sent!";
+}).WithOpenApi();
 app.Run();

@@ -5,8 +5,7 @@ using Lynx.Infrastructure.Repository.Interfaces;
 namespace Lynx.Infrastructure.Repository;
 
 public class TenantRepository:Repository<Tenant>,ITenantRepository
-{
-    private readonly ApplicationDbContext _db;
+{   private readonly ApplicationDbContext _db;
 
     public TenantRepository(ApplicationDbContext db) : base(db)
     {

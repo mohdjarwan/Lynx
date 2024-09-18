@@ -1,12 +1,18 @@
 ﻿using Lynx.Core.Entities;
 using Lynx.Infrastructure.Commands;
+using Lynx.Infrastructure.Response;
 using Lynx.Infrastructure.Data;
 using Lynx.Infrastructure.Dto;
 using Lynx.Infrastructure.Mappers;
 using Lynx.Infrastructure.Repository.Interfaces;
 using Lynx.IServices;
+using Lynx.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Confluent.Kafka;
+using System.Net;
+using ServiceStack.Web;
+using FluentValidation;
 
 namespace Lynx.Controllers;
 //[Authorize]
@@ -14,14 +20,15 @@ namespace Lynx.Controllers;
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly IAuthService  _authService;
+    private readonly IAuthService _authService;
     private readonly IEmailService _email;
-    private readonly IUnitOfWork   _unitOfWork;
-    private readonly IUserMapper   _mapper;
+    private readonly IValidator<CreateUserCommand> _validator;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserMapper _mapper;
     private readonly IPasswordHasher _passwordHasher;
-   // private readonly IConfiguration _configuration;
+    // private readonly IConfiguration _configuration;
     public UsersController(IUnitOfWork unitOfWork, IUserMapper mapper, IPasswordHasher passwordHasher,
-       /* IConfiguration configuration,*/ IAuthService auth, IEmailService email)
+    /* IConfiguration configuration,*/ IAuthService auth, IEmailService email, IValidator<CreateUserCommand> validator)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -29,9 +36,11 @@ public class UsersController : ControllerBase
         //_configuration = configuration;
         _authService = auth;
         _email = email;
+        _validator = validator;
     }
+
     [HttpPost("send")]
-    public async Task<IActionResult> SendEmail( CreateEmail create)
+    public async Task<IActionResult> SendEmail(CreateEmail create)
     {
         var email = create.email;
         var subject = create.subject;
@@ -66,6 +75,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType<User>(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetValue(int id, CancellationToken cancellationToken)
     {
+
         if (id <= 0)
         {
             return BadRequest();
@@ -73,7 +83,10 @@ public class UsersController : ControllerBase
         var user = await _unitOfWork.Users.GetAsync(u => u.Id == id, cancellationToken);
         if (user is null)
         {
-            return NotFound();
+            var response = new APIResponse<string>();
+
+            // response.SetResponseInfo(HttpStatusCode.BadRequest, new List<string> { "Something went wrong" }, null, false);
+            return NotFound(response);
         }
 
         return Ok(new
@@ -86,8 +99,23 @@ public class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<User>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Post([FromBody] CreateUserCommand command, CancellationToken cancellationToken)
-    {   
-    var user = new User
+    {
+        var response = new APIResponse<ValidateDto>();
+        var result = _validator.Validate(command);
+
+        if (!result.IsValid)
+        {
+            var errors = (result.Errors).Select(u => new ValidateDto
+            {
+                PropertyName = u.PropertyName,
+                ErrorMessage = u.ErrorMessage
+            }).ToList();
+            response.SetResponseInfo(HttpStatusCode.BadRequest, errors, null!, false);
+
+            return BadRequest(response);
+        }
+
+        var user = new User
         {
             UserName = command.username,
             Email = command.email,
@@ -105,11 +133,9 @@ public class UsersController : ControllerBase
 
         await _unitOfWork.Users.Add(user);
         await _unitOfWork.SaveAsync(cancellationToken);
+        response.SetResponseInfo(HttpStatusCode.OK,null!, user, true);
 
-        return CreatedAtAction(nameof(GetValue), new
-        {
-            id = user.Id
-        }, user);
+        return Ok(response);
     }
 
     [AllowAnonymous]

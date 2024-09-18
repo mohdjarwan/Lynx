@@ -31,7 +31,7 @@ namespace Lynx.Infrastructure.Commands
     {
         public CreateUserCommandValidator()
         {
-            RuleFor(c => c.email).NotNull();
+            RuleFor(c => c.email).NotEmpty();
 
             RuleFor(c => c.username).NotEmpty();
         }
