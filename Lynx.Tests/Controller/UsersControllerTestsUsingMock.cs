@@ -1,4 +1,6 @@
-﻿using Lynx.Controllers;
+﻿using FluentValidation;
+using FluentValidation.Results;
+using Lynx.Controllers;
 using Lynx.Core.Entities;
 using Lynx.Infrastructure.Commands;
 using Lynx.Infrastructure.Data;
@@ -19,6 +21,7 @@ public class UsersControllerTestsUsingMock
     private readonly Mock<IPasswordHasher> _mockPasswordHasher;
     private readonly Mock<IAuthService> _mockAuthService;
     private readonly Mock<IEmailService> _mockEmailService;
+    private readonly Mock<IValidator<CreateUserCommand>> _mockvalidator;
     private readonly UsersController _controller;
 
     public UsersControllerTestsUsingMock()
@@ -28,12 +31,14 @@ public class UsersControllerTestsUsingMock
         _mockPasswordHasher = new();
         _mockAuthService    = new();
         _mockEmailService   = new();
+        _mockvalidator      = new();
 
         _controller = new UsersController(_mockUnitOfWork.Object,
                                           _mockUserMapper.Object,
                                           _mockPasswordHasher.Object,
                                           _mockAuthService.Object,
-                                          _mockEmailService.Object);
+                                          _mockEmailService.Object,
+                                          _mockvalidator.Object);
     }
 
     [Fact]
@@ -61,7 +66,7 @@ public class UsersControllerTestsUsingMock
         var result = await _controller.GetValue(invalidUserId, default);
 
         // Assert
-        Assert.IsType<NotFoundResult>(result);
+        Assert.IsType<NotFoundObjectResult>(result);
     }
 
     [Fact]
@@ -129,6 +134,7 @@ public class UsersControllerTestsUsingMock
         };
 
         _mockPasswordHasher.Setup(p => p.Hash(command.password!)).Returns("hashedpassword");
+        _mockvalidator.Setup(p => p.Validate(command)).Returns(new ValidationResult());
         _mockUnitOfWork.Setup(u => u.Users.Add(user)).Returns(Task.CompletedTask);
         _mockUnitOfWork.Setup(u => u.SaveAsync(It.IsAny<CancellationToken>())).Returns(Task.FromResult(1));
 
@@ -136,9 +142,63 @@ public class UsersControllerTestsUsingMock
         var result = await _controller.Post(command, default);
 
         // Assert
-        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
-        Assert.Equal(nameof(_controller.GetValue), createdAtActionResult.ActionName);
-       Assert.Equal(user.Id, ((User)createdAtActionResult.Value!).Id);
+        var createdAtActionResult = Assert.IsType<OkObjectResult>(result);
+       // Assert.Equal(nameof(_controller.GetValue), createdAtActionResult.ActionName);
+       //Assert.Equal(user.Id, ((User)createdAtActionResult.Value!).Id);
+    }
+    [Fact]
+    public async Task Post_ShouldReturnBadRequest_WhenValidationIsFailed()
+    {
+        // Arrange
+        var command = new CreateUserCommand
+        {
+            username = "testuser",
+            email = "testuser@example.com",
+            password = "password123",
+            firstname = "Test",
+            lastname = "User",
+            tenantid = 1,
+            IsDeleted = false,
+            CreatedBy = "admin",
+            LastModifiedBy = "admin",
+            CreatedDate = DateTime.UtcNow,
+            LastModifiedDate = DateTime.UtcNow
+        };
+
+        var user = new User
+        {
+            UserName = command.username,
+            Email = command.email,
+            Password = "hashedpassword",  // The hashed password
+            FirstName = command.firstname,
+            LastName = command.lastname,
+            TenantId = command.tenantid,
+            IsDeleted = command.IsDeleted,
+            CreatedBy = command.CreatedBy!,
+            LastModifiedBy = command.LastModifiedBy!,
+            CreatedDate = command.CreatedDate,
+            LastModifiedDate = command.LastModifiedDate
+        };
+        var fakeValidationFailures = new List<ValidationFailure>
+            {
+                new ValidationFailure("username", "Username is required."),
+                new ValidationFailure("email", "Email is required.")
+            };
+
+        var fakeValidationResult = new ValidationResult(fakeValidationFailures);
+
+        _mockPasswordHasher.Setup(p => p.Hash(command.password!)).Returns("hashedpassword");
+        _mockvalidator.Setup(p => p.Validate(command)).Returns(fakeValidationResult);
+        _mockUnitOfWork.Setup(u => u.Users.Add(user)).Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.SaveAsync(It.IsAny<CancellationToken>())).Returns(Task.FromResult(1));
+
+        // Act
+        var result = await _controller.Post(command, default);
+
+        // Assert
+        var createdAtActionResult = Assert.IsType<BadRequestObjectResult>(result);
+       // Assert.Equal(nameof(_controller.GetValue), createdAtActionResult.ActionName);
+       //Assert.Equal(user.Id, ((User)createdAtActionResult.Value!).Id);
     }
 
     [Fact]

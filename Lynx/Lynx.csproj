@@ -31,4 +31,8 @@
     <ProjectReference Include="..\Lynx.Infrastructure\Lynx.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Middlewares\" />
+  </ItemGroup>
+
 </Project>

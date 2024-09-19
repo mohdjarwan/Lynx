@@ -13,6 +13,7 @@ using Confluent.Kafka;
 using System.Net;
 using ServiceStack.Web;
 using FluentValidation;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Lynx.Controllers;
 //[Authorize]
@@ -57,11 +58,14 @@ public class UsersController : ControllerBase
     [ProducesResponseType<IEnumerable<User>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
+        var response = new APIResponse<string>();
+
         var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
         if (users is null)
         {
             return NotFound();
         }
+        response.SetResponseInfo(HttpStatusCode.OK, null!, users, false);
 
         return Ok(new
         {
